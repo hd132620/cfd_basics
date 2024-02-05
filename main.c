@@ -19,7 +19,7 @@ int main(void) {
         printf("Step %d : %lfs\n", t + 1, DT * t);
         // printMatrix(u);
         saveVelocity(u, v);
-        updateIntermediateVelocity(u, v, p);  // 중간 속도 갱신
+        updateIntermediateVelocity_fs(u, v, p);  // 중간 속도 갱신
         updatePressureField(u, v, p);    // 압력 갱신
         updateVelocityField(u, v, p);    // 속도 갱신
         setBoundaryConditions(u, v, p);  // 경계 조건 설정
