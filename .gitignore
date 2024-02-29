@@ -57,3 +57,5 @@ main
 cfd
 parallel
 .DS_store
+petsc/examples/*
+petsc/lab/*
