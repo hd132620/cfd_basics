@@ -26,7 +26,7 @@ void petsc_dmda_init(DM *da);
 void petsc_matrixvector_init(Mat *A, Vec *x, Vec *b, DM da,
                              double *xpt, double *ypt, double *zpt, double *XC, double *YC, double *ZC);
 void petsc_ksp_init(KSP *ksp, Mat A);
-void petsc_solve(double phi[NX][NY], DM da, Vec *x, Vec *b, KSP ksp,
-                 double *xpt, double *ypt, double *zpt, double uhat[NX][NY], double vhat[NX][NY], double what[NX][NY]);
+void petsc_solve(double phi[NX+2][NY+2], DM da, Vec *x, Vec *b, KSP ksp,
+                 double *xpt, double *ypt, double *zpt, double uhat[NX+1][NY+2], double vhat[NX+2][NY+1], double what[NX][NY]);
 
 #endif

@@ -1,6 +1,6 @@
 #include "cfd.h"
 
-void initialize(double u[NX][NY], double v[NX][NY], double p[NX][NY]) {
+void initialize(double u[NX+1][NY+2], double v[NX+2][NY+1], double p[NX+2][NY+2]) {
   // 초기 조건 설정
   for (int i = 0; i < NX; ++i) {
     for (int j = 0; j < NY; ++j) {
@@ -15,28 +15,30 @@ void initialize(double u[NX][NY], double v[NX][NY], double p[NX][NY]) {
 
 void setGridPosition(double g) {
   for (int i = 0; i < NX + 1; ++i) {
-    x[i] = (1.0 - tanh(g * (1.0 - 2.0 * i / (NX - 1))) / tanh(g)) / 2 * L;
-    // printf("%.4lf ", x[i]);
+    // x[i] = (1.0 - tanh(g * (1.0 - 2.0 * i / NX)) / tanh(g)) / 2 * L;
+    x[i] = (double)i / (NX);
+    printf("%.7lf ", x[i]);
   }
-  // printf("\n");
+  printf("\n");
   for (int j = 0; j < NY + 1; ++j) {
-    y[j] = (1.0 - tanh(g * (1.0 - 2.0 * j / (NY - 1))) / tanh(g)) / 2 * L;
-    // printf("%.4lf ", y[j]);
+    // y[j] = (1.0 - tanh(g * (1.0 - 2.0 * j / NY)) / tanh(g)) / 2 * L;
+    y[j] = (double)j / (NY);
+    printf("%.7lf ", y[j]);
   }
-  // printf("\n");
+  printf("\n");
   for (int i = 0; i < NX; ++i) {
     xc[i] = (x[i] + x[i + 1]) / 2.0;
-    // printf("%.4lf ", xc[i]);
+    printf("%.4lf ", xc[i]);
   }
-  // printf("\n");
+  printf("\n");
   for (int j = 0; j < NY; ++j) {
     yc[j] = (y[j] + y[j + 1]) / 2.0;
-    // printf("%.4lf ", yc[j]);
+    printf("%.4lf ", yc[j]);
   }
-  // printf("\n");
+  printf("\n");
 }
 
-void saveVelocity(double u[NX][NY], double v[NX][NY]) {
+void saveVelocity(double u[NX+1][NY+2], double v[NX+2][NY+1]) {
   for (int i = 0; i < NX; ++i) {
     for (int j = 0; j < NY; ++j) {
       u_temp[i][j] = u[i][j];
@@ -46,87 +48,99 @@ void saveVelocity(double u[NX][NY], double v[NX][NY]) {
 }
 
 // 경계 조건 설정 함수
-void setPressureBoundaryConditions(double p[NX][NY]) {
-  for (int i = 0; i < NX; ++i) {
+void setPressureBoundaryConditions(double p[NX+2][NY+2]) {
+  for (int i = 1; i < NX + 1; ++i) {
     // 상단 벽면: dp/dy = 0 (Neumann 경계 조건)
-    p[i][NY - 1] = p[i][NY - 2];
+    p[i][NY + 1] = p[i][NY];
     // 하단 벽면: dp/dy = 0 (Neumann 경계 조건)
     p[i][0] = p[i][1];
   }
 
-  for (int j = 0; j < NY; ++j) {
+  for (int j = 1; j < NY + 1; ++j) {
     // 왼쪽 벽면: dp/dx = 0 (Neumann 경계 조건)
     p[0][j] = p[1][j];
     // 오른쪽 벽면: dp/dx = 0 (Neumann 경계 조건)
-    p[NX - 1][j] = p[NX - 2][j];
+    p[NX + 1][j] = p[NX][j];
   }
 }
 
-void setVelocityBoundaryConditions(double u[NX][NY], double v[NX][NY]) {
+void setVelocityBoundaryConditions(double u[NX+1][NY+2], double v[NX+2][NY+1]) {
   double gamma_top = 0.0;
   double gamma_bottom = 0.0;
   double gamma_west = 0.0;
   double gamma_east = 0.0;
 
-  for (int j = 0; j < NY; ++j) {
-    // 왼쪽 벽면: u=0, v=0
-    gamma_west = (u[0][j] - xc[0]) / (xc[1] - xc[0]);
-    u[0][j] = 0.0;
-    v[0][j] = -gamma_west / (1 - gamma_west) * v[1][j];
-    // 오른쪽 벽면: u=0, v=0
-    gamma_east = (u[NX - 2][j] - xc[NX - 2]) / (xc[NX - 2] - xc[NX - 3]);
-    u[NX - 1][j] = 0.0;
-    v[NX - 1][j] = -(1 - gamma_east) / gamma_east * v[NX - 2][j];
-    // printf("%lf", u[i][NY - 1]);
-  }
-
-  for (int i = 0; i < NX; ++i) {
-    // 상단 벽면 (lid-driven): u=U_WALL, v=0
-    gamma_top = (v[i][NY - 2] - yc[NY - 2]) / (yc[NY - 2] - yc[NY - 3]);
-    u[i][NY - 1] = (U_WALL - (1 - gamma_top) * u[i][NY - 2]) / gamma_top;
-    v[i][NY - 1] = 0.0;
+  // gamma_west = (xc[1] - x[1]) / (xc[1] - xc[0]);
+  // gamma_east = (x[NX - 1] - xc[NX - 2]) / (xc[NX - 1] - xc[NX - 2]);
+  // gamma_top = (y[NY - 1] - yc[NY - 2]) / (yc[NY - 1] - yc[NY - 2]);
+  // gamma_bottom = (yc[1] - y[1]) / (yc[1] - yc[0]);
+  for (int i = 0; i < NX + 2; ++i) {
+    // 상단 벽면
+    v[i][NY] = 0.0;
     // 하단 벽면: u=0, v=0
-    gamma_bottom = (v[i][0] - yc[0]) / (yc[1] - yc[0]);
-    u[i][0] = -gamma_bottom / (1 - gamma_bottom) * u[i][1];
     v[i][0] = 0.0;
   }
+  for (int j = 0; j < NY + 1; ++j) {
+    // 왼쪽 벽면: v=0
+    v[0][j] = - v[1][j];
+    // 오른쪽
+    v[NX + 1][j] = - v[NX][j];
+  }
+  for (int j = 0; j < NY + 2; ++j) {
+    // 왼쪽 벽면: u=0
+    u[0][j] = 0.0;
+    // 오른쪽
+    u[NX][j] = 0.0;
+  }
+  for (int i = 0; i < NX + 1; ++i) {
+    // 상단 벽면 (lid-driven): u=U_WALL, v=0
+    u[i][NY + 1] = 2 * U_WALL - u[i][NY];
+    // 하단
+    u[i][0] = - u[i][1];
+  }
 }
-
-void setBoundaryConditions(double u[NX][NY], double v[NX][NY],
-                           double p[NX][NY]) {
+// 경계 조건 설정 함수
+void setBoundaryConditions(double u[NX+1][NY+2], double v[NX+2][NY+1],
+                           double p[NX+2][NY+2]) {
   setPressureBoundaryConditions(p);
   setVelocityBoundaryConditions(u, v);
 }
 
 // 중간 속도 갱신 함수
-void updateIntermediateVelocity(double u[NX][NY], double v[NX][NY],
-                                double p[NX][NY]) {
+void updateIntermediateVelocity(double u[NX+1][NY+2], double v[NX+2][NY+1],
+                                double p[NX+2][NY+2]) {
 
   // 중간 속도 갱신
-  for (int i = 1; i < NX - 1; ++i) {
-    for (int j = 1; j < NY - 1; ++j) {
+  for (int i = 1; i <= NX - 1; ++i) {
+    for (int j = 1; j <= NY; ++j) {
       u_hat[i][j] =
           u[i][j] +
-          DT * (-((SQUARE(u[i + 1][j]) - SQUARE(u[i][j])) / (xc[i + 1] - xc[i]) +
-                  (u[i][j + 1] * v[i][j + 1] - u[i][j] * v[i][j]) / (yc[j + 1] - yc[j])) +
-                1.0 / Re *
-                    (((u[i + 1][j] - u[i][j]) / (x[i + 1] - x[i]) -
-                      (u[i][j] - u[i - 1][j]) / (x[i] - x[i - 1])) /
-                         (xc[i + 1] - xc[i]) +
-                     ((u[i][j + 1] - u[i][j]) / (y[j + 1] - y[j]) -
-                      (u[i][j] - u[i][j - 1]) / (y[j] - y[j - 1])) /
-                         (yc[j + 1] - yc[j])));
+          DT * (-((SQUARE(u[i + 1][j]) - SQUARE(u[i][j])) / (1.0/NX) +
+                  (u[i][j + 1] * v[i][j + 1] - u[i][j] * v[i][j]) / (1.0/NY)) +
+               1.0 / Re *
+                    ((u[i + 1][j] - 2.0 * u[i][j] + u[i - 1][j]) /
+                         (1.0/(NX*NX)) +
+                     (u[i][j + 1] - 2.0 * u[i][j] + u[i][j - 1]) /
+                         (1.0/(NY*NY))));
+      // if(isnan(u_hat[i][j]) != 0) {
+      //   printf("%i %i -> %lf %lf\n", i, j, (1.0/NX),
+      //               (
+      //                    (yc[j + 1] - yc[j])));
+      // }
+    }
+  }
+  for (int i = 1; i <= NX; ++i) {
+    for (int j = 1; j <= NY - 1; ++j) {
       v_hat[i][j] =
           v[i][j] +
-          DT * (-((u[i + 1][j] * v[i + 1][j] - u[i][j] * v[i][j]) / (xc[i + 1] - xc[i]) +
-                  (SQUARE(v[i][j + 1]) - SQUARE(v[i][j])) / (yc[j + 1] - yc[j])) +
+          DT * (-((u[i + 1][j] * v[i + 1][j] - u[i][j] * v[i][j]) / (1.0/NX) +
+                  (SQUARE(v[i][j + 1]) - SQUARE(v[i][j])) / (1.0/NY)) +
                 1.0 / Re *
-                    (((v[i + 1][j] - v[i][j]) / (x[i + 1] - x[i]) -
-                      (v[i][j] - v[i - 1][j]) / (x[i] - x[i - 1])) /
-                         (xc[i + 1] - xc[i]) +
-                     ((v[i][j + 1] - v[i][j]) / (y[j + 1] - y[j]) -
-                      (v[i][j] - v[i][j - 1]) / (y[j] - y[j - 1])) /
-                         (yc[j + 1] - yc[j])));
+                    (
+                      (v[i + 1][j] - 2.0 * v[i][j] + v[i - 1][j]) /
+                         (1.0/(NX*NX)) +
+                     (v[i][j + 1] - 2.0 * v[i][j] + v[i][j - 1]) /
+                         (1.0/(NY*NY))));
     }
   }
 }
@@ -184,8 +198,8 @@ void getLinearSolutionWithThomas(int dim, int numOfSolutions,
   free(c);
 }
 
-void updateIntermediateVelocity_fs(double u[NX][NY], double v[NX][NY],
-                                   double p[NX][NY]) {
+void updateIntermediateVelocity_fs(double u[NX+1][NY+2], double v[NX+2][NY+1],
+                                   double p[NX+2][NY+2]) {
   // convection variables
   double conx[NX][NY];
   double cony[NX][NY];
@@ -253,6 +267,7 @@ void updateIntermediateVelocity_fs(double u[NX][NY], double v[NX][NY],
       conyold[i][j] = cony[i][j];
     }
   }
+
   // TODO: 풀이에서 Boundary 제외
   // (1 - A1)(1 - A2)X = RHS (X = u_hat - u)
   //
@@ -287,14 +302,14 @@ void updateIntermediateVelocity_fs(double u[NX][NY], double v[NX][NY],
 }
 
 int its = 0;
-void updatePressureField(double u[NX][NY], double v[NX][NY], double p[NX][NY]) {
+void updatePressureField(double u[NX+1][NY+2], double v[NX+2][NY+1], double p[NX+2][NY+2]) {
   // double dp; // 압력 보정값
   // double D, M, N;
   // double minus_M;
   // double vij_minus_vijminus1;
 
   // // 압력 보정을 위한 반복 수행
-  // for (int it = 0; it < 100000; ++it) {
+  // for (int it = 0; it < 10000; ++it) {
   //   // 압력 기울기 항 계산
   //   for (int i = 1; i < NX - 1; ++i) {
   //     for (int j = 1; j < NY - 1; ++j) {
@@ -336,27 +351,36 @@ void updatePressureField(double u[NX][NY], double v[NX][NY], double p[NX][NY]) {
   DMDestroy(&da);
 }
 
-void updateVelocityField(double u[NX][NY], double v[NX][NY], double p[NX][NY]) {
+void updateVelocityField(double u[NX+1][NY+2], double v[NX+2][NY+1], double p[NX+2][NY+2]) {
   // 속도 갱신
-  for (int i = 1; i < NX - 1; ++i) {
-    for (int j = 1; j < NY - 1; ++j) {
+  for (int i = 1; i <= NX - 1; ++i) {
+    for (int j = 1; j <= NY; ++j) {
       u[i][j] =
           u_hat[i][j] - DT * (p[i][j] - p[i - 1][j]) / (xc[i] - xc[i - 1]);
+    }
+  }
+  for (int i = 1; i <= NX; ++i) {
+    for (int j = 1; j <= NY - 1; ++j) {
       v[i][j] =
           v_hat[i][j] - DT * (p[i][j] - p[i][j - 1]) / (yc[j] - yc[j - 1]);
     }
   }
 }
 
-double getAbsError(double u[NX][NY], double v[NX][NY]) {
+double getAbsError(double u[NX+1][NY+2], double v[NX+2][NY+1]) {
   double nom = 0.0;
   double denom = 0.0;
+  double error = 0.0;
 
-  for (int i = 0; i < NX; ++i) {
-    for (int j = 0; j < NY; ++j) {
+  for (int i = 1; i < NX + 1; ++i) {
+    for (int j = 1; j < NY + 2; ++j) {
       nom += fabs(u[i][j] - u_temp[i][j]);
-      nom += fabs(v[i][j] - v_temp[i][j]);
       denom += fabs(u[i][j]);
+    }
+  }
+  for (int i = 1; i < NX + 2; ++i) {
+    for (int j = 1; j < NY + 1; ++j) {
+      nom += fabs(v[i][j] - v_temp[i][j]);
       denom += fabs(v[i][j]);
     }
   }
@@ -364,13 +388,13 @@ double getAbsError(double u[NX][NY], double v[NX][NY]) {
   return nom / denom;
 }
 
-void printMatrix(double mtx[NX][NY]) {
+void printMatrix(int mtxNX, int mtxNY, double mtx[mtxNX][mtxNY]) {
   // 결과 출력
   int divide = 1;
-  for (int j = NY - 1; j >= 0; j--) {
-    for (int i = 0; i < NX; i++) {
+  for (int j = mtxNY - 1; j >= 0; j--) {
+    for (int i = 0; i < mtxNX; i++) {
       if (i % divide == 0 && j % divide == 0) {
-        printf("%.1e ", mtx[i][j]);
+        printf("%3.4e ", mtx[i][j]);
       }
     }
     if (j % divide == 0)
@@ -378,7 +402,7 @@ void printMatrix(double mtx[NX][NY]) {
   }
 }
 
-void printResults(double u[NX][NY]) {
+void printResults(double u[NX+1][NY+2]) {
   // 결과 출력
   for (int i = 0; i < NX; i++) {
     for (int j = 0; j < NY; j++) {
