@@ -2,7 +2,7 @@
 
 2D Navier-Stokes 및 Poisson 방정식 해석용 CFD (Lid-driven cavity) 연습코드
 
-![alt text](image.png)
+![alt text](postprocessing/image.png)
 ---
 
 ## 수치 해법 요약
